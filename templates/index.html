@@ -330,10 +330,37 @@
         </div>
     </div>
 
+    <!-- Load TensorFlow.js and models for real computer vision -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+
     <script>
         let isStreaming = false;
         let currentMode = 'object_detection';
         let currentFilter = 'none';
+        
+        // Real AI models
+        let objectDetectionModel = null;
+        let faceDetectionModel = null;
+        let handsModel = null;
+        let poseModel = null;
+        
+        // Motion detection variables
+        let previousFrame = null;
+        let motionThreshold = 30;
+        
+        // Real detection results
+        let detectedObjects = [];
+        let detectedFaces = [];
+        let detectedHands = [];
+        let detectedPose = null;
+        let motionAreas = [];
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
@@ -344,6 +371,9 @@
             document.getElementById('video-feed').style.display = 'none';
             document.getElementById('processed-canvas').style.display = 'none';
             document.getElementById('browser-video').style.display = 'none';
+            
+            // Load real AI models
+            loadAIModels();
             
             // Add event listeners for mode buttons
             document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -363,6 +393,128 @@
             console.log('Found mode buttons:', document.querySelectorAll('.mode-btn').length);
             console.log('Found filter buttons:', document.querySelectorAll('.filter-btn').length);
         });
+
+        // Load real AI models
+        async function loadAIModels() {
+            console.log('Loading real AI models...');
+            
+            try {
+                // Load object detection model (COCO-SSD)
+                objectDetectionModel = await cocoSsd.load();
+                console.log('Object detection model loaded');
+                
+                // Load face detection model
+                faceDetectionModel = await blazeface.load();
+                console.log('Face detection model loaded');
+                
+                console.log('All AI models loaded successfully');
+            } catch (error) {
+                console.error('Error loading AI models:', error);
+            }
+        }
+
+        // Real object detection
+        async function detectObjects(video) {
+            if (!objectDetectionModel) return [];
+            
+            try {
+                const predictions = await objectDetectionModel.detect(video);
+                return predictions.map(pred => ({
+                    class: pred.class,
+                    confidence: pred.score,
+                    bbox: pred.bbox
+                }));
+            } catch (error) {
+                console.error('Object detection error:', error);
+                return [];
+            }
+        }
+
+        // Real face detection
+        async function detectFaces(video) {
+            if (!faceDetectionModel) return [];
+            
+            try {
+                const predictions = await faceDetectionModel.estimateFaces(video, false);
+                return predictions.map(pred => ({
+                    bbox: [
+                        pred.topLeft[0],
+                        pred.topLeft[1],
+                        pred.bottomRight[0] - pred.topLeft[0],
+                        pred.bottomRight[1] - pred.topLeft[1]
+                    ],
+                    confidence: pred.probability[0]
+                }));
+            } catch (error) {
+                console.error('Face detection error:', error);
+                return [];
+            }
+        }
+
+        // Real motion detection
+        function detectMotion(currentImageData) {
+            if (!previousFrame) {
+                previousFrame = new Uint8ClampedArray(currentImageData.data);
+                return [];
+            }
+            
+            const motionPixels = [];
+            const current = currentImageData.data;
+            const threshold = motionThreshold;
+            
+            for (let i = 0; i < current.length; i += 4) {
+                const currentGray = (current[i] + current[i + 1] + current[i + 2]) / 3;
+                const previousGray = (previousFrame[i] + previousFrame[i + 1] + previousFrame[i + 2]) / 3;
+                
+                if (Math.abs(currentGray - previousGray) > threshold) {
+                    const pixelIndex = i / 4;
+                    const x = pixelIndex % currentImageData.width;
+                    const y = Math.floor(pixelIndex / currentImageData.width);
+                    motionPixels.push({x, y});
+                }
+            }
+            
+            // Update previous frame
+            previousFrame = new Uint8ClampedArray(current);
+            
+            // Group motion pixels into areas
+            return groupMotionPixels(motionPixels, currentImageData.width, currentImageData.height);
+        }
+
+        function groupMotionPixels(pixels, width, height) {
+            if (pixels.length < 100) return []; // Ignore small movements
+            
+            // Simple clustering - group nearby pixels
+            const areas = [];
+            const gridSize = 20;
+            const grid = {};
+            
+            pixels.forEach(pixel => {
+                const gridX = Math.floor(pixel.x / gridSize);
+                const gridY = Math.floor(pixel.y / gridSize);
+                const key = `${gridX},${gridY}`;
+                
+                if (!grid[key]) {
+                    grid[key] = [];
+                }
+                grid[key].push(pixel);
+            });
+            
+            Object.keys(grid).forEach(key => {
+                if (grid[key].length > 50) { // Minimum pixels for motion area
+                    const [gridX, gridY] = key.split(',').map(Number);
+                    areas.push({
+                        x: gridX * gridSize,
+                        y: gridY * gridSize,
+                        width: gridSize,
+                        height: gridSize,
+                        pixelCount: grid[key].length
+                    });
+                }
+            });
+            
+            return areas;
+        }
 
         let browserStream = null;
         let canvas = null;
@@ -481,30 +633,37 @@
             }
         }
 
-        function applyProcessing(imageData) {
-            // Apply processing overlays immediately
+        async function applyProcessing(imageData) {
+            const video = document.getElementById('browser-video');
+            
+            // Run real AI detection based on current mode
             switch(currentMode) {
                 case 'object_detection':
-                    drawObjectDetection();
+                    detectedObjects = await detectObjects(video);
+                    drawRealObjectDetection();
                     break;
                 case 'motion_tracking':
-                    drawMotionTracking();
+                    motionAreas = detectMotion(imageData);
+                    drawRealMotionTracking();
                     break;
                 case 'creative_art':
-                    // Apply creative filters to image data first
                     const filteredData = applyCreativeFilter(imageData);
                     ctx.putImageData(filteredData, 0, 0);
                     break;
                 case 'environmental':
-                    drawEnvironmentalInfo();
+                    drawRealEnvironmentalInfo(imageData);
                     break;
                 case 'ai_detection':
-                    drawAIDetection();
+                    detectedFaces = await detectFaces(video);
+                    detectedObjects = await detectObjects(video);
+                    drawRealAIDetection();
                     break;
                 case 'gesture_control':
+                    // Real gesture detection would go here
                     drawGestureControl();
                     break;
                 case 'pose_estimation':
+                    // Real pose detection would go here
                     drawPoseEstimation();
                     break;
                 case 'sound_visual':
@@ -512,7 +671,138 @@
                     break;
             }
             
+            // Update stats with real detection counts
+            updateRealStats();
+            
             return imageData;
+        }
+
+        function drawRealObjectDetection() {
+            detectedObjects.forEach(obj => {
+                const [x, y, width, height] = obj.bbox;
+                
+                // Draw bounding box
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x, y, width, height);
+                
+                // Draw label with confidence
+                ctx.fillStyle = '#00ff00';
+                ctx.font = '16px Arial';
+                const label = `${obj.class} (${Math.round(obj.confidence * 100)}%)`;
+                ctx.fillText(label, x, y - 10);
+                
+                // Draw confidence bar
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+                ctx.fillRect(x, y - 8, width * obj.confidence, 6);
+            });
+            
+            // Show detection count
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '18px Arial';
+            ctx.fillText(`Objects Detected: ${detectedObjects.length}`, 10, 30);
+        }
+
+        function drawRealMotionTracking() {
+            motionAreas.forEach(area => {
+                // Draw motion area
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(area.x, area.y, area.width, area.height);
+                
+                // Draw motion intensity
+                const intensity = Math.min(area.pixelCount / 200, 1);
+                ctx.fillStyle = `rgba(255, 255, 0, ${intensity * 0.3})`;
+                ctx.fillRect(area.x, area.y, area.width, area.height);
+                
+                // Label
+                ctx.fillStyle = '#ffff00';
+                ctx.font = '14px Arial';
+                ctx.fillText('MOTION', area.x, area.y - 5);
+            });
+            
+            // Show motion status
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '18px Arial';
+            const status = motionAreas.length > 0 ? 'MOTION DETECTED' : 'No Motion';
+            ctx.fillText(status, 10, 30);
+        }
+
+        function drawRealEnvironmentalInfo(imageData) {
+            const data = imageData.data;
+            let brightness = 0;
+            let rTotal = 0, gTotal = 0, bTotal = 0;
+            const pixelCount = data.length / 4;
+            
+            // Calculate real brightness and dominant color
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                brightness += (r + g + b) / 3;
+                rTotal += r;
+                gTotal += g;
+                bTotal += b;
+            }
+            
+            brightness = brightness / pixelCount;
+            const avgR = Math.round(rTotal / pixelCount);
+            const avgG = Math.round(gTotal / pixelCount);
+            const avgB = Math.round(bTotal / pixelCount);
+            
+            // Display real environmental data
+            ctx.fillStyle = '#ffff00';
+            ctx.font = '18px Arial';
+            ctx.fillText(`Brightness: ${Math.round(brightness)}`, 10, 30);
+            ctx.fillText(`Environment: ${brightness > 128 ? 'Bright' : 'Dark'}`, 10, 55);
+            ctx.fillText(`Dominant Color: RGB(${avgR}, ${avgG}, ${avgB})`, 10, 80);
+            
+            // Show color swatch
+            ctx.fillStyle = `rgb(${avgR}, ${avgG}, ${avgB})`;
+            ctx.fillRect(10, 90, 50, 30);
+            ctx.strokeStyle = '#ffffff';
+            ctx.strokeRect(10, 90, 50, 30);
+        }
+
+        function drawRealAIDetection() {
+            // Draw detected faces
+            detectedFaces.forEach(face => {
+                const [x, y, width, height] = face.bbox;
+                
+                ctx.strokeStyle = '#ff00ff';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x, y, width, height);
+                
+                ctx.fillStyle = '#ff00ff';
+                ctx.font = '16px Arial';
+                ctx.fillText(`Face (${Math.round(face.confidence * 100)}%)`, x, y - 10);
+            });
+            
+            // Draw detected objects
+            detectedObjects.forEach(obj => {
+                const [x, y, width, height] = obj.bbox;
+                
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, width, height);
+                
+                ctx.fillStyle = '#00ffff';
+                ctx.font = '14px Arial';
+                ctx.fillText(`${obj.class} (${Math.round(obj.confidence * 100)}%)`, x, y - 5);
+            });
+            
+            // Show detection summary
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '18px Arial';
+            ctx.fillText(`AI Detection: ${detectedFaces.length} faces, ${detectedObjects.length} objects`, 10, 30);
+        }
+
+        function updateRealStats() {
+            // Update live stats with real detection data
+            document.getElementById('objectCount').textContent = detectedObjects.length;
+            document.getElementById('currentMode').textContent = currentMode.replace('_', ' ').toUpperCase();
+            document.getElementById('currentFilter').textContent = currentFilter.replace('_', ' ').toUpperCase();
         }
 
         function drawObjectDetection() {
