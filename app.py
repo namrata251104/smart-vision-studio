@@ -102,6 +102,25 @@ def change_filter():
     processor.current_filter = filter_name
     return jsonify({'status': 'success', 'message': f'Filter changed to {filter_name}'})
 
+@app.route('/get_modes')
+def get_modes():
+    return jsonify({
+        'modes': ['demo', 'object_detection', 'motion_tracking', 'creative_art', 'environmental', 'gesture_control', 'ai_detection', 'sound_visual', 'video_record', 'advanced_track', 'pose_estimation'],
+        'current_mode': processor.current_mode
+    })
+
+@app.route('/capture_photo', methods=['POST'])
+def capture_photo():
+    return jsonify({'status': 'success', 'message': 'Photo captured in demo mode'})
+
+@app.route('/start_recording', methods=['POST'])
+def start_recording():
+    return jsonify({'status': 'success', 'message': 'Recording started in demo mode'})
+
+@app.route('/stop_recording', methods=['POST'])
+def stop_recording():
+    return jsonify({'status': 'success', 'message': 'Recording stopped in demo mode'})
+
 @app.route('/get_stats')
 def get_stats():
     return jsonify({
