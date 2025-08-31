@@ -66,6 +66,10 @@ processor = SimpleVisionProcessor()
 def index():
     return render_template('index.html')
 
+@app.route('/health')
+def health():
+    return jsonify({'status': 'healthy', 'message': 'Smart Vision Studio is running'})
+
 @app.route('/video_feed')
 def video_feed():
     return Response(processor.generate_frames(),
@@ -106,4 +110,5 @@ def get_stats():
 if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    print(f"Starting Flask app on port {port}")
+    app.run(debug=True, host='0.0.0.0', port=port, threaded=True)
