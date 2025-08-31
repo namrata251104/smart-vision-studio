@@ -437,39 +437,36 @@ class SmartVisionProcessor:
     def recognize_gesture(self, landmarks):
         """Simple gesture recognition based on hand landmarks"""
         if len(landmarks) < 21:
-{{ ... }}
+            return "Unknown"
         
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                # Draw hand landmarks
-                self.mp_drawing.draw_landmarks(frame, hand_landmarks, self.mp_hands.HAND_CONNECTIONS)
-                
-                # Get landmark positions
-                landmarks = []
-                for lm in hand_landmarks.landmark:
-                    landmarks.append([lm.x, lm.y])
-                
-                # Simple gesture recognition
-                gesture = self.recognize_gesture(landmarks)
-                cv2.putText(frame, f"Gesture: {gesture}", (10, 30), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-                
-                # Execute gesture commands with cooldown
-                if self.gesture_cooldown <= 0:
-                    if "Stop Recording" in gesture and self.is_recording_video:
-                        self.stop_video_recording()
-                        self.gesture_cooldown = 30
-                    elif "Start Recording" in gesture and not self.is_recording_video:
-                        self.start_video_recording()
-                        self.gesture_cooldown = 30
-                
-                cv2.putText(frame, f"Gesture: {gesture}", (10, 30), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        # Simple finger counting based on landmark positions
+        fingers_up = []
         
-        if self.gesture_cooldown > 0:
-            self.gesture_cooldown -= 1
+        # Thumb
+        if landmarks[4][0] > landmarks[3][0]:
+            fingers_up.append(1)
+        else:
+            fingers_up.append(0)
+            
+        # Other fingers
+        for i in [8, 12, 16, 20]:
+            if landmarks[i][1] < landmarks[i-2][1]:
+                fingers_up.append(1)
+            else:
+                fingers_up.append(0)
         
-        return frame
+        total_fingers = sum(fingers_up)
+        
+        if total_fingers == 0:
+            return "Fist - Stop Recording"
+        elif total_fingers == 1:
+            return "Point - Select Object"
+        elif total_fingers == 2:
+            return "Peace - Take Photo"
+        elif total_fingers == 5:
+            return "Open Hand - Start Recording"
+        else:
+            return f"{total_fingers} Fingers"
     
     def start_video_recording(self):
         """Start video recording"""
