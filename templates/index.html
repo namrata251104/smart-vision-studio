@@ -237,8 +237,8 @@
             <div class="video-section">
                 <div class="video-container">
                     <video id="browser-video" autoplay playsinline style="display: none; width: 100%; height: 100%; object-fit: cover;"></video>
-                    <canvas id="processed-canvas" style="width: 100%; height: 100%; object-fit: cover;"></canvas>
-                    <img id="video-feed" src="/video_feed" alt="Video Feed" style="display: none;">
+                    <canvas id="processed-canvas" style="display: none; width: 100%; height: 100%; object-fit: cover;"></canvas>
+                    <img id="video-feed" src="/video_feed" alt="Video Feed" style="width: 100%; height: 100%; object-fit: cover;">
                     <div class="video-overlay">
                         <div class="status-indicator" id="camera-status">
                             <span class="status-dot"></span>
@@ -340,6 +340,11 @@
             updateStatus();
             loadModes();
             
+            // Hide demo feed initially, show camera request message
+            document.getElementById('video-feed').style.display = 'none';
+            document.getElementById('processed-canvas').style.display = 'none';
+            document.getElementById('browser-video').style.display = 'none';
+            
             // Add event listeners for mode buttons
             document.querySelectorAll('.mode-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -379,11 +384,15 @@
                 browserStream = stream;
                 
                 const video = document.getElementById('browser-video');
-                video.srcObject = stream;
-                video.style.display = 'block';
+                const canvas = document.getElementById('processed-canvas');
+                const serverFeed = document.getElementById('video-feed');
                 
-                // Hide server video feed
-                document.getElementById('video-feed').style.display = 'none';
+                video.srcObject = stream;
+                
+                // Show browser video and canvas, hide server feed
+                video.style.display = 'block';
+                canvas.style.display = 'block';
+                serverFeed.style.display = 'none';
                 
                 // Start processing
                 isStreaming = true;
@@ -402,7 +411,13 @@
         }
 
         function startServerDemo() {
-            console.log('Starting server demo...');
+            console.log('Fallback: Starting server demo...');
+            
+            // Hide browser elements, show server feed
+            document.getElementById('browser-video').style.display = 'none';
+            document.getElementById('processed-canvas').style.display = 'none';
+            document.getElementById('video-feed').style.display = 'block';
+            
             fetch('/start_camera', {
                 method: 'POST',
                 headers: {
@@ -413,10 +428,8 @@
             .then(data => {
                 if (data.status === 'success') {
                     isStreaming = true;
-                    document.getElementById('video-feed').style.display = 'block';
-                    document.getElementById('processed-canvas').style.display = 'none';
                     updateStatusIndicator(true);
-                    console.log('Server demo started');
+                    console.log('Server demo started as fallback');
                 }
             })
             .catch(error => {
@@ -712,15 +725,15 @@
             });
         }
 
-        function updateStatusIndicator(online) {
-            const indicator = document.getElementById('statusIndicator');
-            const statusText = document.getElementById('statusText');
+        function updateStatusIndicator(isOnline) {
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-text');
             
-            if (online) {
-                indicator.className = 'status-indicator status-online';
-                statusText.textContent = 'Camera Online';
+            if (isOnline) {
+                statusDot.style.backgroundColor = '#4CAF50';
+                statusText.textContent = browserStream ? 'Live Camera' : 'Demo Mode';
             } else {
-                indicator.className = 'status-indicator status-offline';
+                statusDot.style.backgroundColor = '#f44336';
                 statusText.textContent = 'Camera Offline';
             }
         }
