@@ -59,7 +59,7 @@ logs/
 *.tmp
 *.temp
 
-# Model files (too large for deployment)
+# Model files (too large for deployment - will download automatically)
 *.pt
 *.pth
 *.onnx

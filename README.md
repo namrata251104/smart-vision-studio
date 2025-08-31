@@ -1,83 +1,62 @@
-# 🎨 Smart Vision Studio
+# 🎥 Smart Vision Studio
 
-A real-time multi-modal image processing application that combines object detection, motion tracking, creative artistic filters, environmental analysis, and gesture control - all without face processing.
+**Real-time AI-powered image processing web application** with advanced computer vision features, artistic filters, and interactive controls.
 
 ## ✨ Features
 
-### 🎯 **Object Detection Mode**
-- Real-time color-based object detection
-- Bounding box visualization with confidence scores
-- Object counting and classification
-- Support for multiple objects simultaneously
+### 🤖 AI Processing Modes
+- **Object Detection** - Color-based detection with bounding boxes
+- **AI Detection** - Advanced YOLOv8 object recognition
+- **Motion Tracking** - Background subtraction and alerts
+- **Pose Estimation** - 3D body tracking with MediaPipe
+- **Gesture Control** - Hand gesture recognition
+- **Environmental Analysis** - Brightness and color monitoring
 
-### 🏃 **Motion Tracking Mode**
-- Advanced background subtraction
-- Motion area highlighting
-- Security monitoring capabilities
-- Motion history tracking
+### 🎨 Artistic Filters
+- Oil Painting • Pencil Sketch • Watercolor • Pop Art
+- Neon Glow • Thermal Vision • Cyberpunk • Vintage • Cartoon
 
-### 🎨 **Creative Art Mode**
-- Oil painting effect
-- Pencil sketch transformation
-- Watercolor simulation
-- Pop art style
-- Neon glow effects
-- Thermal vision
-- Cyberpunk aesthetic
-- Vintage film look
-- Cartoon stylization
+### 🚀 Advanced Features
+- Real-time video recording
+- Sound visualization with FFT
+- Performance analytics
+- Background replacement
+- Interactive web interface
 
-### 🌍 **Environmental Analysis Mode**
-- Real-time brightness monitoring
-- Dominant color extraction
-- Environmental condition assessment
-- Color palette visualization
+## 🛠️ Tech Stack
 
-### 👋 **Gesture Control Mode**
-- Hand gesture recognition using MediaPipe
-- Interactive controls via hand movements
-- Real-time gesture feedback
-- Multiple gesture commands
+- **Backend**: Flask, OpenCV, MediaPipe
+- **AI/ML**: YOLOv8, PyTorch, scikit-learn
+- **Frontend**: HTML5, CSS3, JavaScript
+- **Audio**: PyAudio, SciPy
 
 ## 🚀 Quick Start
 
-1. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-2. **Run the Application**
-   ```bash
-   python app.py
-   ```
+# Run the application
+python app.py
 
-3. **Open Browser**
-   - Navigate to `http://localhost:5000`
-   - Click "Start Camera" to begin
-   - Switch between modes and filters in real-time
+# Open browser to http://localhost:5000
+```
 
 ## 🎮 Controls
 
-### Web Interface
-- **Start/Stop Camera**: Control webcam access
-- **Mode Buttons**: Switch between processing modes
-- **Filter Buttons**: Apply creative effects
-- **Capture Photo**: Save current frame
+- **1-9**: Switch modes
+- **R/T**: Start/Stop recording
+- **Space**: Capture photo
+- **P**: Pose estimation
+- **B**: Background replacement
 
-### Keyboard Shortcuts
-- `1-5`: Switch between modes
-- `Space`: Capture photo
-- `S`: Start/Stop camera
+## 🌐 Deployment
 
-## 🛠️ Technical Stack
+Ready for cloud deployment with Railway, Render, or Heroku. Demo mode enabled for environments without camera access.
 
-- **Backend**: Flask + OpenCV + MediaPipe
-- **Frontend**: Modern HTML5 + CSS3 + JavaScript
-- **Computer Vision**: OpenCV for image processing
-- **AI**: MediaPipe for gesture recognition
-- **Real-time**: WebSocket streaming
+## 📄 License
 
-## 📋 System Requirements
+MIT License
 
 - Python 3.8+
 - Webcam
