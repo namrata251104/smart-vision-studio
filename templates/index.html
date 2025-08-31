@@ -348,15 +348,20 @@
             // Add event listeners for mode buttons
             document.querySelectorAll('.mode-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
+                    console.log('Mode button clicked:', this.dataset.mode);
                     changeMode(this.dataset.mode);
                 });
             });
 
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
+                    console.log('Filter button clicked:', this.dataset.filter);
                     changeFilter(this.dataset.filter);
                 });
             });
+            
+            console.log('Found mode buttons:', document.querySelectorAll('.mode-btn').length);
+            console.log('Found filter buttons:', document.querySelectorAll('.filter-btn').length);
         });
 
         let browserStream = null;
@@ -456,11 +461,11 @@
                 // Get image data for processing
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 
-                // Apply current mode processing
-                const processedData = applyProcessing(imageData);
+                // Draw video frame to canvas first
+                ctx.putImageData(imageData, 0, 0);
                 
-                // Draw processed frame back to canvas
-                ctx.putImageData(processedData, 0, 0);
+                // Apply current mode processing overlays
+                applyProcessing(imageData);
                 
                 // Continue processing
                 animationId = requestAnimationFrame(processFrame);
@@ -477,39 +482,34 @@
         }
 
         function applyProcessing(imageData) {
-            // Apply processing overlays after the frame is drawn
-            setTimeout(() => {
-                switch(currentMode) {
-                    case 'object_detection':
-                        drawObjectDetection();
-                        break;
-                    case 'motion_tracking':
-                        drawMotionTracking();
-                        break;
-                    case 'creative_art':
-                        // Creative filters are applied to imageData
-                        break;
-                    case 'environmental':
-                        drawEnvironmentalInfo();
-                        break;
-                    case 'ai_detection':
-                        drawAIDetection();
-                        break;
-                    case 'gesture_control':
-                        drawGestureControl();
-                        break;
-                    case 'pose_estimation':
-                        drawPoseEstimation();
-                        break;
-                    case 'sound_visual':
-                        drawSoundVisualization();
-                        break;
-                }
-            }, 0);
-            
-            // Apply creative filters to image data
-            if (currentMode === 'creative_art') {
-                return applyCreativeFilter(imageData);
+            // Apply processing overlays immediately
+            switch(currentMode) {
+                case 'object_detection':
+                    drawObjectDetection();
+                    break;
+                case 'motion_tracking':
+                    drawMotionTracking();
+                    break;
+                case 'creative_art':
+                    // Apply creative filters to image data first
+                    const filteredData = applyCreativeFilter(imageData);
+                    ctx.putImageData(filteredData, 0, 0);
+                    break;
+                case 'environmental':
+                    drawEnvironmentalInfo();
+                    break;
+                case 'ai_detection':
+                    drawAIDetection();
+                    break;
+                case 'gesture_control':
+                    drawGestureControl();
+                    break;
+                case 'pose_estimation':
+                    drawPoseEstimation();
+                    break;
+                case 'sound_visual':
+                    drawSoundVisualization();
+                    break;
             }
             
             return imageData;
@@ -781,6 +781,13 @@
 
         function changeMode(mode) {
             console.log('Changing mode to:', mode);
+            
+            // Update current mode immediately for visual effects
+            currentMode = mode;
+            updateActiveButtons();
+            updateStats();
+            
+            // Also update server
             fetch('/change_mode', {
                 method: 'POST',
                 headers: {
@@ -788,27 +795,24 @@
                 },
                 body: JSON.stringify({mode: mode})
             })
-            .then(response => {
-                console.log('Change mode response:', response);
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('Change mode data:', data);
-                if (data.status === 'success') {
-                    currentMode = mode;
-                    updateActiveButtons();
-                    updateStats();
-                    console.log('Mode changed to:', mode);
-                } else {
-                    console.error('Failed to change mode:', data.message);
-                }
+                console.log('Server mode updated:', data);
             })
             .catch(error => {
-                console.error('Error changing mode:', error);
+                console.error('Error updating server mode:', error);
             });
         }
 
         function changeFilter(filter) {
+            console.log('Changing filter to:', filter);
+            
+            // Update current filter immediately for visual effects
+            currentFilter = filter;
+            updateActiveButtons();
+            updateStats();
+            
+            // Also update server
             fetch('/change_filter', {
                 method: 'POST',
                 headers: {
@@ -818,15 +822,10 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.status === 'success') {
-                    currentFilter = filter;
-                    updateActiveButtons();
-                    updateStats();
-                    console.log('Filter changed to:', filter);
-                }
+                console.log('Server filter updated:', data);
             })
             .catch(error => {
-                console.error('Error changing filter:', error);
+                console.error('Error updating server filter:', error);
             });
         }
 
