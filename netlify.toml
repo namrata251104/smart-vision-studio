@@ -1,0 +1,15 @@
+[build]
+  command = "echo 'No build required for Python Flask app'"
+  publish = "."
+
+[build.environment]
+  PYTHON_VERSION = "3.9"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "python app.py"
+  port = 5000

@@ -230,7 +230,7 @@
     <div class="container">
         <div class="header">
             <h1>🎨 Smart Vision Studio</h1>
-            <p>Real-time Object Detection • Motion Tracking • Creative Filters • Gesture Control</p>
+            <p>Real-time Object Detection • Motion Tracking • Creative Filters • Environmental Analysis</p>
         </div>
 
         <div class="main-content">
@@ -261,16 +261,8 @@
                     <h3>🔧 Processing Modes</h3>
                     <div class="mode-grid">
                         <button class="btn btn-secondary mode-btn" data-mode="object_detection">🎯 Objects</button>
-                        <button class="btn btn-secondary mode-btn" data-mode="ai_detection">🤖 AI Detection</button>
                         <button class="btn btn-secondary mode-btn" data-mode="motion_tracking">🏃 Motion</button>
                         <button class="btn btn-secondary mode-btn" data-mode="creative_art">🎨 Creative</button>
-                        <button class="btn btn-secondary mode-btn" data-mode="sound_visual">🎵 Sound Visual</button>
-                        <button class="btn btn-secondary mode-btn" data-mode="video_record">📹 Recording</button>
-                        <button class="btn btn-secondary mode-btn" data-mode="advanced_track">🎯 Advanced Track</button>
-                        <button class="btn btn-secondary mode-btn" data-mode="pose_estimation">🤸 Pose Track</button>
-                        <button class="btn btn-secondary mode-btn" data-mode="bg_replacement">🖼️ Background</button>
-                        <button class="btn btn-secondary mode-btn" data-mode="object_analytics">📊 Analytics</button>
-                        <button class="btn btn-secondary mode-btn" data-mode="performance">⚡ Performance</button>
                         <button class="btn btn-secondary mode-btn" data-mode="environmental">🌍 Environment</button>
                         <button class="btn btn-secondary mode-btn" data-mode="gesture_control">👋 Gestures</button>
                     </div>
@@ -293,10 +285,8 @@
                 </div>
 
                 <div class="control-group">
-                    <h3>📹 Recording Controls</h3>
-                    <button class="btn btn-primary" onclick="startRecording()">🔴 Start Recording</button>
-                    <button class="btn btn-danger" onclick="stopRecording()">⏹️ Stop Recording</button>
-                    <button class="btn btn-secondary" onclick="downloadVideo()">💾 Download Video</button>
+                    <h3>📸 Capture</h3>
+                    <button class="capture-btn" onclick="capturePhoto()">📸 Capture Photo</button>
                 </div>
 
                 <div class="stats-panel">

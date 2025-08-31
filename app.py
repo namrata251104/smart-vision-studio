@@ -26,7 +26,7 @@ class SmartVisionProcessor:
         self.current_mode = 'object_detection'
         self.current_filter = 'none'
         
-        # Initialize MediaPipe for hands and pose (no face)
+        # Initialize MediaPipe for gesture control
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
             static_image_mode=False,
@@ -35,12 +35,6 @@ class SmartVisionProcessor:
             min_tracking_confidence=0.5
         )
         self.mp_drawing = mp.solutions.drawing_utils
-        self.mp_pose = mp.solutions.pose
-        self.pose = self.mp_pose.Pose(
-            static_image_mode=False,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
-        )
         
         # Background subtractor for motion detection
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
@@ -49,37 +43,18 @@ class SmartVisionProcessor:
         self.yolo_model = None
         self.load_yolo_model()
         
-        # Audio processing
-        self.audio_stream = None
-        self.audio_data = []
-        self.is_recording_audio = False
-        
-        # Video recording
-        self.video_writer = None
-        self.is_recording_video = False
-        self.recorded_frames = []
-        
-        # Advanced tracking
-        self.object_tracker = cv2.TrackerCSRT_create()
-        self.tracking_active = False
-        self.tracked_bbox = None
+        # Simplified - no recording or advanced tracking
         
         # Advanced features disabled for lightweight deployment
         # self.advanced_features = AdvancedFeatures()
         
-        # Mode processors
+        # Simplified mode processors
         self.modes = {
             'object_detection': self.object_detection_mode,
             'motion_tracking': self.motion_tracking_mode,
             'creative_art': self.creative_art_mode,
             'environmental': self.environmental_mode,
-            'gesture_control': self.gesture_control_mode,
-            'ai_detection': self.ai_detection_mode,
-            'sound_visual': self.sound_visualization_mode,
-            'video_record': self.video_recording_mode,
-            'advanced_track': self.advanced_tracking_mode,
-            'pose_estimation': self.pose_estimation_mode,
-            'environmental': self.environmental_mode
+            'gesture_control': self.gesture_control_mode
         }
         
         # Creative filters
@@ -124,9 +99,18 @@ class SmartVisionProcessor:
         self.yolo_model = None
     
     def initialize_camera(self):
-        """Initialize webcam capture - disabled for deployment"""
-        print("Camera disabled for cloud deployment - using demo mode")
-        return True
+        """Initialize webcam capture"""
+        try:
+            self.cap = cv2.VideoCapture(0)
+            if self.cap.isOpened():
+                print("Camera initialized successfully")
+                return True
+            else:
+                print("Failed to open camera")
+                return False
+        except Exception as e:
+            print(f"Camera initialization error: {e}")
+            return False
     
     def no_filter(self, frame):
         return frame
@@ -342,96 +326,35 @@ class SmartVisionProcessor:
         
         return frame
     
-    def ai_detection_mode(self, frame):
-        """AI detection disabled for lightweight deployment"""
-        cv2.putText(frame, "AI Detection: Disabled for Cloud Deployment", (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
-        cv2.putText(frame, "Use Object Detection mode instead", (10, 60), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        return frame
-    
-    def sound_visualization_mode(self, frame):
-        """Sound visualization disabled for lightweight deployment"""
-        cv2.putText(frame, "Sound Visualization: Disabled for Cloud", (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
-        return frame
-    
-    def video_recording_mode(self, frame):
-        """Video recording with playback controls"""
-        if self.is_recording_video:
-            # Add recording indicator
-            cv2.circle(frame, (frame.shape[1] - 30, 30), 10, (0, 0, 255), -1)
-            cv2.putText(frame, "REC", (frame.shape[1] - 60, 35), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-            
-            # Store frame for recording
-            self.recorded_frames.append(frame.copy())
-            
-            # Limit buffer size
-            if len(self.recorded_frames) > 300:  # ~10 seconds at 30fps
-                self.recorded_frames.pop(0)
-        
-        cv2.putText(frame, f"Recorded Frames: {len(self.recorded_frames)}", (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        
-        return frame
-    
-    def advanced_tracking_mode(self, frame):
-        """Advanced object tracking with ML"""
-        if not self.tracking_active:
-            # Auto-detect objects to track
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            corners = cv2.goodFeaturesToTrack(gray, 100, 0.3, 10)
-            
-            if corners is not None:
-                for corner in corners:
-                    x, y = corner.ravel().astype(int)
-                    cv2.circle(frame, (x, y), 3, (255, 0, 0), -1)
-            else:
-                cv2.putText(frame, "Show your hand for gesture control", (10, 30), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
-        
-        # Show tracking info
-        cv2.putText(frame, "Advanced Tracking: Feature Points", (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
-        
-        return frame
-    
-    def pose_estimation_mode(self, frame):
-        """Full body pose estimation using MediaPipe"""
+    def gesture_control_mode(self, frame):
+        """Hand gesture recognition and control"""
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = self.pose.process(rgb_frame)
+        results = self.hands.process(rgb_frame)
         
-        if results.pose_landmarks:
-            self.mp_drawing.draw_landmarks(
-                frame, results.pose_landmarks, self.mp_pose.POSE_CONNECTIONS)
-            cv2.putText(frame, "Pose Detected!", (10, 30), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                # Draw hand landmarks
+                self.mp_drawing.draw_landmarks(
+                    frame, hand_landmarks, self.mp_hands.HAND_CONNECTIONS)
+                
+                # Extract landmark positions
+                landmarks = []
+                for lm in hand_landmarks.landmark:
+                    landmarks.append([lm.x, lm.y])
+                
+                # Recognize gesture
+                gesture = self.recognize_gesture(landmarks)
+                
+                # Display gesture
+                cv2.putText(frame, f"Gesture: {gesture}", (10, 30), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                
+                # Execute gesture commands
+                self.execute_gesture_command(gesture)
         else:
-            cv2.putText(frame, "Stand in view for pose detection", (10, 30), 
+            cv2.putText(frame, "Show your hand for gesture control", (10, 30), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
         
-        return frame
-    
-    def sound_visualization_mode(self, frame):
-        """Audio visualization with frequency bars"""
-        # Create demo frequency bars
-        bar_width = 20
-        bar_gap = 5
-        num_bars = 20
-        
-        for i in range(num_bars):
-            # Simulate frequency data
-            height = int(np.random.random() * 200 + 50)
-            x = 50 + i * (bar_width + bar_gap)
-            y = frame.shape[0] - height - 50
-            
-            # Color based on frequency
-            color = (int(255 * i / num_bars), 255 - int(255 * i / num_bars), 128)
-            cv2.rectangle(frame, (x, y), (x + bar_width, frame.shape[0] - 50), color, -1)
-        
-        cv2.putText(frame, "Sound Visualization (Demo)", (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
         return frame
     
     def recognize_gesture(self, landmarks):
@@ -458,57 +381,35 @@ class SmartVisionProcessor:
         total_fingers = sum(fingers_up)
         
         if total_fingers == 0:
-            return "Fist - Stop Recording"
+            return "Fist - Reset Mode"
         elif total_fingers == 1:
-            return "Point - Select Object"
+            return "Point - Object Detection"
         elif total_fingers == 2:
-            return "Peace - Take Photo"
+            return "Peace - Motion Tracking"
+        elif total_fingers == 3:
+            return "Three - Creative Mode"
+        elif total_fingers == 4:
+            return "Four - Environmental"
         elif total_fingers == 5:
-            return "Open Hand - Start Recording"
+            return "Open Hand - Capture Photo"
         else:
             return f"{total_fingers} Fingers"
     
-    def start_video_recording(self):
-        """Start video recording"""
-        self.is_recording_video = True
-        self.recorded_frames = []
-        print("Video recording started")
-    
-    def stop_video_recording(self):
-        """Stop video recording and save"""
-        if self.is_recording_video and len(self.recorded_frames) > 0:
-            self.is_recording_video = False
-            # Save video in background thread
-            threading.Thread(target=self.save_recorded_video, daemon=True).start()
-            print("Video recording stopped")
-    
-    def save_recorded_video(self):
-        """Save recorded frames to video file"""
-        try:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"recorded_video_{timestamp}.mp4"
-            
-            if len(self.recorded_frames) > 0:
-                height, width = self.recorded_frames[0].shape[:2]
-                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                out = cv2.VideoWriter(filename, fourcc, 30.0, (width, height))
-                
-                for frame in self.recorded_frames:
-                    out.write(frame)
-                
-                out.release()
-                print(f"Video saved as {filename}")
-        except Exception as e:
-            print(f"Error saving video: {e}")
-    
-    def initialize_audio(self):
-        """Initialize audio capture for visualization"""
-        try:
-            self.audio_stream = pyaudio.PyAudio()
-            return True
-        except Exception as e:
-            print(f"Audio initialization failed: {e}")
-            return False
+    def execute_gesture_command(self, gesture):
+        """Execute commands based on recognized gestures"""
+        if "Object Detection" in gesture:
+            self.current_mode = 'object_detection'
+        elif "Motion Tracking" in gesture:
+            self.current_mode = 'motion_tracking'
+        elif "Creative Mode" in gesture:
+            self.current_mode = 'creative_art'
+        elif "Environmental" in gesture:
+            self.current_mode = 'environmental'
+        elif "Reset Mode" in gesture:
+            self.current_mode = 'object_detection'
+        elif "Capture Photo" in gesture:
+            # Trigger photo capture
+            print("Photo captured via gesture!")
     
     def update_fps(self):
         """Calculate and update FPS"""
@@ -519,54 +420,38 @@ class SmartVisionProcessor:
             self.fps_counter = 0
             self.fps_start_time = current_time
     
-    def generate_frames(self):
-        """Generate video frames for streaming - demo mode for deployment"""
-        import numpy as np
+    def process_frame(self):
+        """Process a single frame from camera"""
+        if self.cap is None or not self.cap.isOpened():
+            return None
+            
+        ret, frame = self.cap.read()
+        if not ret:
+            return None
+            
+        # Flip frame horizontally for mirror effect
+        frame = cv2.flip(frame, 1)
         
+        # Apply current mode processing
+        if self.current_mode in self.modes:
+            frame = self.modes[self.current_mode](frame)
+        
+        # Add UI overlay
+        frame = self.add_ui_overlay(frame)
+        
+        return frame
+    
+    def generate_frames(self):
+        """Generate video frames for streaming"""
         while self.is_running:
-            # Create a demo frame with gradient background
-            frame = np.zeros((480, 640, 3), dtype=np.uint8)
-            
-            # Create gradient background
-            for i in range(480):
-                for j in range(640):
-                    frame[i, j] = [int(i/2), int(j/3), int((i+j)/4)]
-            
-            # Add demo text
-            cv2.putText(frame, "Smart Vision Studio - Demo Mode", (50, 50), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            cv2.putText(frame, f"Mode: {self.current_mode}", (50, 100), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-            cv2.putText(frame, f"Filter: {self.current_filter}", (50, 130), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-            cv2.putText(frame, "Camera disabled for cloud deployment", (50, 400), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 1)
-            cv2.putText(frame, "Connect your own camera for full functionality", (50, 430), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 1)
-            
-            # Apply current filter for demo
-            if self.current_filter in self.filters and self.current_filter != 'none':
-                try:
-                    frame = self.filters[self.current_filter](frame)
-                except:
-                    pass  # Skip filter if it fails
-            
-            # Add UI overlay
-            frame = self.add_ui_overlay(frame)
-            
-            # Encode frame
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            
-            # Calculate FPS
-            current_time = time.time()
-            self.current_fps = 30  # Fixed FPS for demo
-            self.last_frame_time = current_time
-            
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-            
-            time.sleep(1/30)  # 30 FPS
+            frame = self.process_frame()
+            if frame is not None:
+                ret, buffer = cv2.imencode('.jpg', frame)
+                if ret:
+                    frame_bytes = buffer.tobytes()
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            time.sleep(0.033)  # ~30 FPS
     
     def add_ui_overlay(self, frame):
         """Add enhanced UI overlay with stats"""
@@ -578,40 +463,14 @@ class SmartVisionProcessor:
         cv2.putText(frame, f"FPS: {self.current_fps}", 
                    (frame.shape[1] - 100, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
-        # Recording indicator
-        if self.is_recording_video:
-            cv2.circle(frame, (frame.shape[1] - 30, 90), 8, (0, 0, 255), -1)
-            cv2.putText(frame, "REC", (frame.shape[1] - 55, 95), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
+        # Simplified UI - no recording indicator
         
         # Timestamp
         timestamp = datetime.now().strftime("%H:%M:%S")
         cv2.putText(frame, timestamp, (10, frame.shape[0] - 20), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
     
-    def pose_estimation_mode(self, frame):
-        """3D pose estimation and body tracking"""
-        return self.advanced_features.pose_estimation_mode(frame)
     
-    def edge_computing_mode(self, frame):
-        """Edge computing optimized processing"""
-        return self.advanced_features.edge_computing_mode(frame)
-    
-    def ai_model_switching_mode(self, frame):
-        """Dynamic AI model switching"""
-        return self.advanced_features.ai_model_switching_mode(frame)
-    
-    def performance_analytics_mode(self, frame):
-        """Real-time performance analytics"""
-        return self.advanced_features.performance_analytics_mode(frame)
-    
-    def background_replacement_mode(self, frame):
-        """AI background replacement"""
-        return self.advanced_features.smart_background_replacement(frame)
-    
-    def object_analytics_mode(self, frame):
-        """Advanced object counting and analytics"""
-        return self.advanced_features.object_counting_analytics(frame)
     
     def generate_frames(self):
         """Generator function for video streaming"""
