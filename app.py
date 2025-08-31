@@ -1,5 +1,4 @@
 from flask import Flask, render_template, Response, jsonify, request
-from flask_socketio import SocketIO, emit
 import cv2
 import numpy as np
 import base64
@@ -19,7 +18,6 @@ import tempfile
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'smart_vision_studio'
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 class SmartVisionProcessor:
     def __init__(self):
