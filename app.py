@@ -9,11 +9,13 @@ from datetime import datetime
 import json
 import os
 import mediapipe as mp
-from ultralytics import YOLO
-import torch
-import pyaudio
-from scipy import signal
-from scipy.fft import fft
+# Lightweight deployment - AI features disabled for cloud
+# from ultralytics import YOLO
+# import torch
+# Audio features disabled for lightweight deployment
+# import pyaudio
+# from scipy import signal
+# from scipy.fft import fft
 import wave
 import tempfile
 from advanced_features import AdvancedFeatures
@@ -128,14 +130,9 @@ class SmartVisionProcessor:
         self.current_fps = 0
         
     def load_yolo_model(self):
-        """Load advanced YOLO model for object detection"""
-        try:
-            # Load YOLOv8 model
-            self.yolo_model = YOLO('yolov8n.pt')  # nano version for speed
-            print("YOLOv8 model loaded successfully")
-        except Exception as e:
-            print(f"Could not load YOLO model: {e}")
-            self.yolo_model = None
+        """YOLO model disabled for lightweight deployment"""
+        print("YOLO model disabled for cloud deployment")
+        self.yolo_model = None
     
     def initialize_camera(self):
         """Initialize webcam capture - disabled for deployment"""

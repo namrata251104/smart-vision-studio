@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 import mediapipe as mp
-from scipy import signal
+# Lightweight deployment - sklearn disabled
+# from sklearn.cluster import KMeans
 import threading
 import time
 
