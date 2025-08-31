@@ -70,6 +70,10 @@ def index():
 def health():
     return jsonify({'status': 'healthy', 'message': 'Smart Vision Studio is running'})
 
+@app.route('/test')
+def test():
+    return '<h1>Smart Vision Studio is LIVE!</h1><p>Your Flask app is working perfectly on Railway.</p>'
+
 @app.route('/video_feed')
 def video_feed():
     return Response(processor.generate_frames(),
