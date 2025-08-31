@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Vision Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .video-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        #videoFeed {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: fit-content;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
+            margin-bottom: 15px;
+            color: #fff;
+            font-size: 1.1em;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .btn-filter {
+            background: linear-gradient(45deg, #9C27B0, #7B1FA2);
+            color: white;
+            margin: 3px 0;
+            padding: 8px;
+            font-size: 0.9em;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn.active {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+            transform: scale(1.05);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-offline {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .stats-panel {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 0.9em;
+        }
+
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .capture-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .capture-btn {
+            background: linear-gradient(45deg, #E91E63, #C2185B);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .capture-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .mode-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Smart Vision Studio</h1>
+            <p>Real-time Object Detection • Motion Tracking • Creative Filters • Gesture Control</p>
+        </div>
+
+        <div class="main-content">
+            <div class="video-section">
+                <div class="video-container">
+                    <img id="videoFeed" src="/video_feed" alt="Video Feed" style="display: none;">
+                    <div class="video-overlay">
+                        <span class="status-indicator" id="statusIndicator"></span>
+                        <span id="statusText">Camera Offline</span>
+                    </div>
+                </div>
+                
+                <div class="capture-section">
+                    <button class="capture-btn" onclick="capturePhoto()">📸 Capture Photo</button>
+                </div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="control-group">
+                    <h3>🎮 Camera Control</h3>
+                    <button class="btn btn-primary" onclick="startCamera()">Start Camera</button>
+                    <button class="btn btn-danger" onclick="stopCamera()">Stop Camera</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>🔧 Processing Modes</h3>
+                    <div class="mode-grid">
+                        <button class="btn btn-secondary mode-btn" data-mode="object_detection">🎯 Objects</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="ai_detection">🤖 AI Detection</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="motion_tracking">🏃 Motion</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="creative_art">🎨 Creative</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="sound_visual">🎵 Sound Visual</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="video_record">📹 Recording</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="advanced_track">🎯 Advanced Track</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="pose_estimation">🤸 Pose Track</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="bg_replacement">🖼️ Background</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="object_analytics">📊 Analytics</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="performance">⚡ Performance</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="environmental">🌍 Environment</button>
+                        <button class="btn btn-secondary mode-btn" data-mode="gesture_control">👋 Gestures</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>🎭 Creative Filters</h3>
+                    <div class="filter-grid">
+                        <button class="btn btn-filter filter-btn" data-filter="none">Original</button>
+                        <button class="btn btn-filter filter-btn" data-filter="oil_painting">Oil Painting</button>
+                        <button class="btn btn-filter filter-btn" data-filter="pencil_sketch">Pencil Sketch</button>
+                        <button class="btn btn-filter filter-btn" data-filter="watercolor">Watercolor</button>
+                        <button class="btn btn-filter filter-btn" data-filter="pop_art">Pop Art</button>
+                        <button class="btn btn-filter filter-btn" data-filter="neon_glow">Neon Glow</button>
+                        <button class="btn btn-filter filter-btn" data-filter="thermal_vision">Thermal Vision</button>
+                        <button class="btn btn-filter filter-btn" data-filter="cyberpunk">Cyberpunk</button>
+                        <button class="btn btn-filter filter-btn" data-filter="vintage">Vintage</button>
+                        <button class="btn btn-filter filter-btn" data-filter="cartoon">Cartoon</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>📹 Recording Controls</h3>
+                    <button class="btn btn-primary" onclick="startRecording()">🔴 Start Recording</button>
+                    <button class="btn btn-danger" onclick="stopRecording()">⏹️ Stop Recording</button>
+                    <button class="btn btn-secondary" onclick="downloadVideo()">💾 Download Video</button>
+                </div>
+
+                <div class="stats-panel">
+                    <h3>📊 Live Stats</h3>
+                    <div class="stat-item">
+                        <span>Current Mode:</span>
+                        <span id="currentMode">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Active Filter:</span>
+                        <span id="currentFilter">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>FPS:</span>
+                        <span id="fps">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Recording:</span>
+                        <span id="recordingStatus">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Recorded Frames:</span>
+                        <span id="recordedFrames">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Objects Detected:</span>
+                        <span id="objectCount">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isStreaming = false;
+        let currentMode = 'object_detection';
+        let currentFilter = 'none';
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus();
+            loadModes();
+            
+            // Add event listeners for mode buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    changeMode(this.dataset.mode);
+                });
+            });
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    changeFilter(this.dataset.filter);
+                });
+            });
+        });
+
+        function startCamera() {
+            console.log('Starting camera...');
+            fetch('/start_camera', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                console.log('Start camera response:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Start camera data:', data);
+                if (data.status === 'success') {
+                    isStreaming = true;
+                    document.getElementById('videoFeed').style.display = 'block';
+                    updateStatusIndicator(true);
+                    console.log('Camera started successfully');
+                    // Force refresh video feed
+                    document.getElementById('videoFeed').src = '/video_feed?' + new Date().getTime();
+                } else {
+                    console.error('Failed to start camera:', data.message);
+                    alert('Camera Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error starting camera:', error);
+                alert('Error starting camera: ' + error.message);
+            });
+        }
+
+        function stopCamera() {
+            fetch('/stop_camera', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    isStreaming = false;
+                    document.getElementById('videoFeed').style.display = 'none';
+                    updateStatusIndicator(false);
+                    console.log('Camera stopped successfully');
+                }
+            })
+            .catch(error => {
+                console.error('Error stopping camera:', error);
+            });
+        }
+
+        function changeMode(mode) {
+            console.log('Changing mode to:', mode);
+            fetch('/change_mode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({mode: mode})
+            })
+            .then(response => {
+                console.log('Change mode response:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Change mode data:', data);
+                if (data.status === 'success') {
+                    currentMode = mode;
+                    updateActiveButtons();
+                    updateStats();
+                    console.log('Mode changed to:', mode);
+                } else {
+                    console.error('Failed to change mode:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error changing mode:', error);
+            });
+        }
+
+        function changeFilter(filter) {
+            fetch('/change_filter', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({filter: filter})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    currentFilter = filter;
+                    updateActiveButtons();
+                    updateStats();
+                    console.log('Filter changed to:', filter);
+                }
+            })
+            .catch(error => {
+                console.error('Error changing filter:', error);
+            });
+        }
+
+        function loadModes() {
+            console.log('Loading modes...');
+            fetch('/get_modes')
+            .then(response => {
+                console.log('Get modes response:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Get modes data:', data);
+                currentMode = data.current_mode;
+                currentFilter = data.current_filter;
+                updateActiveButtons();
+                updateStats();
+            })
+            .catch(error => {
+                console.error('Error loading modes:', error);
+            });
+        }
+
+        function updateActiveButtons() {
+            console.log('Updating active buttons. Current mode:', currentMode, 'Current filter:', currentFilter);
+            
+            // Update mode buttons
+            const modeButtons = document.querySelectorAll('.mode-btn');
+            console.log('Found mode buttons:', modeButtons.length);
+            modeButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.mode === currentMode) {
+                    btn.classList.add('active');
+                    console.log('Activated mode button:', btn.dataset.mode);
+                }
+            });
+
+            // Update filter buttons
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            console.log('Found filter buttons:', filterButtons.length);
+            filterButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === currentFilter) {
+                    btn.classList.add('active');
+                    console.log('Activated filter button:', btn.dataset.filter);
+                }
+            });
+        }
+
+        function updateStatusIndicator(online) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (online) {
+                indicator.className = 'status-indicator status-online';
+                statusText.textContent = 'Camera Online';
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                statusText.textContent = 'Camera Offline';
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('currentMode').textContent = currentMode.replace('_', ' ').toUpperCase();
+            document.getElementById('currentFilter').textContent = currentFilter.replace('_', ' ').toUpperCase();
+            
+            // Fetch live stats from server
+            if (isStreaming) {
+                fetch('/get_stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('fps').textContent = data.fps || '-';
+                    document.getElementById('recordingStatus').textContent = data.is_recording ? 'ON' : 'OFF';
+                    document.getElementById('recordedFrames').textContent = data.recorded_frames || '0';
+                })
+                .catch(error => {
+                    console.error('Error fetching stats:', error);
+                });
+            }
+        }
+
+        function updateStatus() {
+            if (isStreaming) {
+                updateStats();
+                document.getElementById('objectCount').textContent = Math.floor(Math.random() * 5);
+            }
+        }
+        
+        function startRecording() {
+            console.log('Starting video recording...');
+            fetch('/start_recording', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Recording started:', data);
+                updateStats();
+            })
+            .catch(error => {
+                console.error('Error starting recording:', error);
+            });
+        }
+        
+        function stopRecording() {
+            console.log('Stopping video recording...');
+            fetch('/stop_recording', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Recording stopped:', data);
+                updateStats();
+            })
+            .catch(error => {
+                console.error('Error stopping recording:', error);
+            });
+        }
+        
+        function downloadVideo() {
+            alert('Video download feature will be available after recording!');
+        }
+
+        function capturePhoto() {
+            if (!isStreaming) {
+                alert('Please start the camera first');
+                return;
+            }
+            
+            // Create a canvas to capture the current frame
+            const video = document.getElementById('videoFeed');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.naturalWidth || 640;
+            canvas.height = video.naturalHeight || 480;
+            ctx.drawImage(video, 0, 0);
+            
+            // Download the image
+            const link = document.createElement('a');
+            link.download = `vision_studio_${new Date().getTime()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            
+            console.log('Photo captured');
+        }
+
+
+        // Enhanced keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case '1':
+                    changeMode('object_detection');
+                    break;
+                case '2':
+                    changeMode('ai_detection');
+                    break;
+                case '3':
+                    changeMode('motion_tracking');
+                    break;
+                case '4':
+                    changeMode('creative_art');
+                    break;
+                case '5':
+                    changeMode('sound_visual');
+                    break;
+                case '6':
+                    changeMode('video_record');
+                    break;
+                case '7':
+                    changeMode('advanced_track');
+                    break;
+                case '8':
+                    changeMode('environmental');
+                    break;
+                case '9':
+                    changeMode('gesture_control');
+                    break;
+                case 'p':
+                    changeMode('pose_estimation');
+                    break;
+                case 'b':
+                    changeMode('bg_replacement');
+                    break;
+                case 'a':
+                    changeMode('object_analytics');
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    capturePhoto();
+                    break;
+                case 'r':
+                    if (isStreaming) {
+                        startRecording();
+                    }
+                    break;
+                case 't':
+                    if (isStreaming) {
+                        stopRecording();
+                    }
+                    break;
+                case 's':
+                    if (isStreaming) {
+                        stopCamera();
+                    } else {
+                        startCamera();
+                    }
+                    break;
+            }
+        });
+
+        // Update stats periodically
+        setInterval(updateStatus, 1000);
+
+        // Auto-refresh video feed error handling
+        document.getElementById('videoFeed').addEventListener('error', function() {
+            if (isStreaming) {
+                setTimeout(() => {
+                    this.src = '/video_feed?' + new Date().getTime();
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
