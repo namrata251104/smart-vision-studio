@@ -12,13 +12,10 @@ import mediapipe as mp
 # Lightweight deployment - AI features disabled for cloud
 # from ultralytics import YOLO
 # import torch
-# Audio features disabled for lightweight deployment
-# import pyaudio
-# from scipy import signal
-# from scipy.fft import fft
+# Lightweight deployment - minimal imports
 import wave
 import tempfile
-from advanced_features import AdvancedFeatures
+# from advanced_features import AdvancedFeatures
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'smart_vision_studio'
@@ -71,8 +68,8 @@ class SmartVisionProcessor:
         self.tracking_active = False
         self.tracked_bbox = None
         
-        # Advanced features module
-        self.advanced_features = AdvancedFeatures()
+        # Advanced features disabled for lightweight deployment
+        # self.advanced_features = AdvancedFeatures()
         
         # Mode processors
         self.modes = {
@@ -82,15 +79,7 @@ class SmartVisionProcessor:
             'environmental': self.environmental_mode,
             'gesture_control': self.gesture_control_mode,
             'ai_detection': self.ai_detection_mode,
-            'sound_visual': self.sound_visualization_mode,
-            'video_record': self.video_recording_mode,
-            'advanced_track': self.advanced_tracking_mode,
-            'pose_estimation': self.pose_estimation_mode,
-            'edge_computing': self.edge_computing_mode,
-            'ai_model_switch': self.ai_model_switching_mode,
-            'performance': self.performance_analytics_mode,
-            'bg_replacement': self.background_replacement_mode,
-            'object_analytics': self.object_analytics_mode
+            'video_record': self.video_recording_mode
         }
         
         # Creative filters
@@ -354,71 +343,17 @@ class SmartVisionProcessor:
         return frame
     
     def ai_detection_mode(self, frame):
-        """Advanced AI object detection using YOLOv8"""
-        if self.yolo_model is not None:
-            try:
-                results = self.yolo_model(frame, verbose=False)
-                
-                for result in results:
-                    boxes = result.boxes
-                    if boxes is not None:
-                        for box in boxes:
-                            # Get bounding box coordinates
-                            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
-                            confidence = box.conf[0].cpu().numpy()
-                            class_id = int(box.cls[0].cpu().numpy())
-                            
-                            if confidence > 0.5:
-                                # Get class name
-                                class_name = self.yolo_model.names[class_id]
-                                
-                                # Draw bounding box
-                                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                                
-                                # Draw label with confidence
-                                label = f"{class_name}: {confidence:.2f}"
-                                cv2.putText(frame, label, (x1, y1 - 10), 
-                                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                
-                cv2.putText(frame, "AI Detection: YOLOv8", (10, 30), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
-            except Exception as e:
-                cv2.putText(frame, f"AI Error: {str(e)[:30]}", (10, 30), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-        else:
-            cv2.putText(frame, "AI Model Loading...", (10, 30), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
-        
+        """AI detection disabled for lightweight deployment"""
+        cv2.putText(frame, "AI Detection: Disabled for Cloud Deployment", (10, 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+        cv2.putText(frame, "Use Object Detection mode instead", (10, 60), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         return frame
     
     def sound_visualization_mode(self, frame):
-        """Audio visualization overlay on video"""
-        try:
-            # Create audio visualization bars
-            if len(self.audio_buffer) > 0:
-                # Apply FFT to get frequency data
-                fft_data = np.abs(fft(self.audio_buffer)[:512])
-                
-                # Normalize and scale
-                fft_data = fft_data / np.max(fft_data) if np.max(fft_data) > 0 else fft_data
-                
-                # Draw frequency bars
-                bar_width = frame.shape[1] // 64
-                for i in range(64):
-                    height = int(fft_data[i * 8] * 200)
-                    x = i * bar_width
-                    cv2.rectangle(frame, (x, frame.shape[0] - height), 
-                                 (x + bar_width - 2, frame.shape[0]), 
-                                 (0, 255 - height, height), -1)
-                
-                # Add audio level indicator
-                audio_level = np.mean(np.abs(self.audio_buffer))
-                cv2.putText(frame, f"Audio Level: {audio_level:.2f}", (10, 30), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
-        except Exception as e:
-            cv2.putText(frame, "Audio: Not Available", (10, 30), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-        
+        """Sound visualization disabled for lightweight deployment"""
+        cv2.putText(frame, "Sound Visualization: Disabled for Cloud", (10, 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
         return frame
     
     def video_recording_mode(self, frame):
